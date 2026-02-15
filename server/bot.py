@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import logging
 import threading
@@ -11,6 +12,10 @@ from dotenv import load_dotenv
 import paths
 
 load_dotenv(os.path.join(paths.BASE_DIR, '.env'))
+
+# Point Playwright to bundled browsers when running from PyInstaller
+if getattr(sys, 'frozen', False):
+    os.environ['PLAYWRIGHT_BROWSERS_PATH'] = os.path.join(sys._MEIPASS, 'pw-browsers')
 
 logger = logging.getLogger(__name__)
 
