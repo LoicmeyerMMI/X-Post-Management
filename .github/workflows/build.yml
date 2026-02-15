@@ -1,0 +1,115 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - 'X'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Install Playwright Chromium
+        run: playwright install chromium
+
+      - name: Build frontend
+        working-directory: ui
+        run: |
+          npm install --legacy-peer-deps
+          npm run build
+
+      - name: Build executable
+        run: pyinstaller "X Post Manager.spec" --distpath dist --clean
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: "dist/X Post Management.exe"
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Install Playwright Chromium
+        run: playwright install chromium
+
+      - name: Build frontend
+        working-directory: ui
+        run: |
+          npm install --legacy-peer-deps
+          npm run build
+
+      - name: Generate macOS icon
+        run: |
+          mkdir -p icon.iconset
+          sips -z 16 16 assets/logo.png --out icon.iconset/icon_16x16.png
+          sips -z 32 32 assets/logo.png --out icon.iconset/icon_16x16@2x.png
+          sips -z 32 32 assets/logo.png --out icon.iconset/icon_32x32.png
+          sips -z 64 64 assets/logo.png --out icon.iconset/icon_32x32@2x.png
+          sips -z 128 128 assets/logo.png --out icon.iconset/icon_128x128.png
+          sips -z 256 256 assets/logo.png --out icon.iconset/icon_128x128@2x.png
+          sips -z 256 256 assets/logo.png --out icon.iconset/icon_256x256.png
+          sips -z 512 512 assets/logo.png --out icon.iconset/icon_256x256@2x.png
+          sips -z 512 512 assets/logo.png --out icon.iconset/icon_512x512.png
+          sips -z 1024 1024 assets/logo.png --out icon.iconset/icon_512x512@2x.png
+          iconutil -c icns icon.iconset -o assets/icon.icns
+
+      - name: Build executable
+        run: pyinstaller "X Post Manager.spec" --distpath dist --clean
+
+      - name: Zip macOS binary
+        run: cd dist && zip -r "X-Post-Management-macOS.zip" "X Post Management"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: "dist/X-Post-Management-macOS.zip"
+
+  release:
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            windows-build/X Post Management.exe
+            macos-build/X-Post-Management-macOS.zip
+          generate_release_notes: true
