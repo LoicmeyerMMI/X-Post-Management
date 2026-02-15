@@ -930,9 +930,13 @@ def _do_open_google_login():
                 '--window-size=1280,900',
             ],
         }
-        if chrome_path:
+        # On macOS, use Playwright's bundled Chromium (system Chrome blocks in .app bundles)
+        import platform
+        if chrome_path and platform.system() != 'Darwin':
             launch_args['executable_path'] = chrome_path
             logger.info(f"Launching Chrome for Google login: {chrome_path}")
+        else:
+            logger.info("Launching Playwright Chromium for Google login")
 
         browser = pw.chromium.launch(**launch_args)
         context = browser.new_context(
