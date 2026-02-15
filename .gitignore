@@ -1,0 +1,22 @@
+.env
+data/
+logs/
+dist/
+build/
+venv/
+__pycache__/
+*.pyc
+
+# Frontend
+ui/node_modules/
+ui/dist/
+
+# Tauri build
+ui/src-tauri/target/
+
+# Misc
+*.log
+cookies.json
+state.json
+nul
+.claude/
